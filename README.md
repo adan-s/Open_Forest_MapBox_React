@@ -158,6 +158,10 @@ src/
 3. **Warning**: Deleting a parent polygon will also delete all its children
 4. Remaining polygons will be automatically renumbered
 
-## License
+### Learn More
 
-MIT
+- [Mapbox GL JS Documentation](https://docs.mapbox.com/mapbox-gl-js/guides/)
+- [Mapbox GL Draw Documentation](https://github.com/mapbox/mapbox-gl-draw)
+- [Turf.js Documentation](https://turfjs.org/)
+- [React Documentation](https://react.dev/)
+- [Vite Documentation](https://vite.dev/)
