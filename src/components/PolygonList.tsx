@@ -1,15 +1,9 @@
-import type { PolygonData, PolygonType } from "../types";
+import type { PolygonType, PolygonListProps, PolygonTreeItemProps } from "../types";
 import {
   getPolygonsByType,
   getTypeLabel,
   getChildPolygons,
 } from "../utils/polygonHelpers";
-
-interface PolygonListProps {
-  polygons: PolygonData[];
-  selectedPolygonId: string | null;
-  onSelectPolygon: (id: string) => void;
-}
 
 export function PolygonList({
   polygons,
@@ -72,14 +66,6 @@ export function PolygonList({
         ))}
     </div>
   );
-}
-
-interface PolygonTreeItemProps {
-  polygon: PolygonData;
-  polygons: PolygonData[];
-  selectedPolygonId: string | null;
-  onSelectPolygon: (id: string) => void;
-  level: number;
 }
 
 function PolygonTreeItem({

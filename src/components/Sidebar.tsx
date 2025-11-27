@@ -1,21 +1,7 @@
-import type { PolygonData, PolygonType } from "../types";
+import type { SidebarProps } from "../types";
 import { DrawingControls } from "./DrawingControls";
 import { PolygonList } from "./PolygonList";
 import { PolygonDetails } from "./PolygonDetails";
-
-interface SidebarProps {
-  polygons: PolygonData[];
-  selectedPolygonId: string | null;
-  isDrawing: boolean;
-  isDirectSelectMode: boolean;
-  validationError: string | null;
-  onStartDrawing: (type: PolygonType, parentId?: string | null) => void;
-  onSelectPolygon: (id: string) => void;
-  onEditPolygon: (id: string) => void;
-  onDeletePolygon: (id: string) => void;
-  onDeleteVertex: (polygonId: string, vertexIndex: number) => void;
-  onClearError: () => void;
-}
 
 export function Sidebar({
   polygons,

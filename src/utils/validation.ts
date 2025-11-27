@@ -1,10 +1,5 @@
 import * as turf from "@turf/turf";
-import type { PolygonData, PolygonType } from "../types";
-
-interface ValidationResult {
-  valid: boolean;
-  error: string | null;
-}
+import type { PolygonData, PolygonType, ValidationResult } from "../types";
 
 const TYPE_LABELS: Record<PolygonType, string> = {
   area: "Areas",

@@ -47,3 +47,9 @@ export interface PolygonContextType {
   deleteVertex: (polygonId: string, vertexIndex: number) => void;
   clearError: () => void;
 }
+
+// Re-export component types
+export * from "./components";
+
+// Re-export validation types
+export * from "./validation";

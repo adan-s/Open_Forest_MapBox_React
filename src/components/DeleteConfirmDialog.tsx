@@ -1,9 +1,4 @@
-interface DeleteConfirmDialogProps {
-  polygonName: string;
-  childrenNames: string[];
-  onConfirm: () => void;
-  onCancel: () => void;
-}
+import type { DeleteConfirmDialogProps } from "../types";
 
 export function DeleteConfirmDialog({
   polygonName,

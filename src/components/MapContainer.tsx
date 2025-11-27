@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import mapboxgl from "mapbox-gl";
 import MapboxDraw from "@mapbox/mapbox-gl-draw";
 import MapboxGeocoder from "@mapbox/mapbox-gl-geocoder";
-import type { PolygonData, PolygonType } from "../types";
+import type { PolygonData, PolygonType, MapContainerProps } from "../types";
 import { calculateMeasurements } from "../utils/measurements";
 import { validatePolygon } from "../utils/validation";
 import { generatePolygonName } from "../utils/polygonHelpers";
@@ -12,21 +12,6 @@ import "@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css";
 import "@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css";
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || "";
-
-interface MapContainerProps {
-  polygons: PolygonData[];
-  setPolygons: React.Dispatch<React.SetStateAction<PolygonData[]>>;
-  selectedPolygonId: string | null;
-  setSelectedPolygonId: (id: string | null) => void;
-  isDrawing: boolean;
-  setIsDrawing: (drawing: boolean) => void;
-  drawingType: PolygonType;
-  selectedParentId: string | null;
-  setValidationError: (error: string | null) => void;
-  isDirectSelectMode: boolean;
-  setIsDirectSelectMode: (mode: boolean) => void;
-  onMapReady: (map: mapboxgl.Map, draw: MapboxDraw) => void;
-}
 
 export function MapContainer({
   polygons,

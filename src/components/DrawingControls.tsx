@@ -1,11 +1,5 @@
-import type { PolygonType, PolygonData } from "../types";
+import type { DrawingControlsProps } from "../types";
 import { getPolygonsByType } from "../utils/polygonHelpers";
-
-interface DrawingControlsProps {
-  polygons: PolygonData[];
-  isDrawing: boolean;
-  onStartDrawing: (type: PolygonType, parentId?: string | null) => void;
-}
 
 export function DrawingControls({
   polygons,

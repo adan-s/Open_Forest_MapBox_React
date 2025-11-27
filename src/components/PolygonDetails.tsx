@@ -1,14 +1,6 @@
-import type { PolygonData } from "../types";
+import type { PolygonDetailsProps } from "../types";
 import { getTypeLabel } from "../utils/polygonHelpers";
 import { formatMeasurement } from "../utils/measurements";
-
-interface PolygonDetailsProps {
-  polygon: PolygonData;
-  isDirectSelectMode: boolean;
-  onEdit: (id: string) => void;
-  onDelete: (id: string) => void;
-  onDeleteVertex: (polygonId: string, vertexIndex: number) => void;
-}
 
 export function PolygonDetails({
   polygon,

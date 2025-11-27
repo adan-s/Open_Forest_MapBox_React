@@ -1,18 +1,11 @@
 import { useState, useCallback, useRef } from "react";
 import type MapboxDraw from "@mapbox/mapbox-gl-draw";
-import type { PolygonData, PolygonType } from "./types";
+import type { PolygonData, PolygonType, DeleteConfirmState } from "./types";
 import { MapContainer, Sidebar, DeleteConfirmDialog } from "./components";
 import { calculateMeasurements } from "./utils/measurements";
 import { validatePolygon } from "./utils/validation";
 import { findAllDescendantIds, renumberPolygons } from "./utils/polygonHelpers";
 import "./App.css";
-
-interface DeleteConfirmState {
-  isOpen: boolean;
-  polygonId: string | null;
-  polygonName: string;
-  childrenNames: string[];
-}
 
 function App() {
   const [polygons, setPolygons] = useState<PolygonData[]>([]);
