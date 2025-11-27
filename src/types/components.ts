@@ -1,5 +1,4 @@
 import type { PolygonData, PolygonType } from "./index";
-import type mapboxgl from "mapbox-gl";
 import type MapboxDraw from "@mapbox/mapbox-gl-draw";
 
 // DeleteConfirmDialog types
