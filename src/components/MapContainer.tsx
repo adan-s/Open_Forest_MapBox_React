@@ -1,0 +1,352 @@
+import { useEffect, useRef } from "react";
+import mapboxgl from "mapbox-gl";
+import MapboxDraw from "@mapbox/mapbox-gl-draw";
+import MapboxGeocoder from "@mapbox/mapbox-gl-geocoder";
+import type { PolygonData, PolygonType } from "../types";
+import { calculateMeasurements } from "../utils/measurements";
+import { validatePolygon } from "../utils/validation";
+import { generatePolygonName } from "../utils/polygonHelpers";
+
+import "mapbox-gl/dist/mapbox-gl.css";
+import "@mapbox/mapbox-gl-draw/dist/mapbox-gl-draw.css";
+import "@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css";
+
+const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN || "";
+
+interface MapContainerProps {
+  polygons: PolygonData[];
+  setPolygons: React.Dispatch<React.SetStateAction<PolygonData[]>>;
+  selectedPolygonId: string | null;
+  setSelectedPolygonId: (id: string | null) => void;
+  isDrawing: boolean;
+  setIsDrawing: (drawing: boolean) => void;
+  drawingType: PolygonType;
+  selectedParentId: string | null;
+  setValidationError: (error: string | null) => void;
+  isDirectSelectMode: boolean;
+  setIsDirectSelectMode: (mode: boolean) => void;
+  onMapReady: (map: mapboxgl.Map, draw: MapboxDraw) => void;
+}
+
+export function MapContainer({
+  polygons,
+  setPolygons,
+  setSelectedPolygonId,
+  setIsDrawing,
+  drawingType,
+  selectedParentId,
+  setValidationError,
+  setIsDirectSelectMode,
+  onMapReady,
+}: MapContainerProps) {
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<mapboxgl.Map | null>(null);
+  const drawRef = useRef<MapboxDraw | null>(null);
+
+  // Refs for event handlers
+  const drawingTypeRef = useRef<PolygonType>(drawingType);
+  const selectedParentIdRef = useRef<string | null>(selectedParentId);
+  const polygonsRef = useRef<PolygonData[]>(polygons);
+
+  // Keep refs in sync
+  useEffect(() => {
+    drawingTypeRef.current = drawingType;
+  }, [drawingType]);
+
+  useEffect(() => {
+    selectedParentIdRef.current = selectedParentId;
+  }, [selectedParentId]);
+
+  useEffect(() => {
+    polygonsRef.current = polygons;
+  }, [polygons]);
+
+  useEffect(() => {
+    if (!mapContainerRef.current || mapRef.current) return;
+
+    mapboxgl.accessToken = MAPBOX_TOKEN;
+
+    const map = new mapboxgl.Map({
+      container: mapContainerRef.current,
+      style: "mapbox://styles/mapbox/streets-v12",
+      center: [-122.4194, 37.7749],
+      zoom: 12,
+    });
+
+    const draw = new MapboxDraw({
+      displayControlsDefault: false,
+      controls: {
+        polygon: false,
+        trash: false,
+      },
+      styles: getDrawStyles(),
+    });
+
+    const geocoder = new MapboxGeocoder({
+      accessToken: MAPBOX_TOKEN,
+      mapboxgl: mapboxgl as unknown,
+      marker: true,
+      placeholder: "Search for a location...",
+      zoom: 15,
+      types:
+        "country,region,postcode,district,place,locality,neighborhood,address,poi,poi.landmark",
+    });
+
+    map.addControl(geocoder, "top-left");
+    map.addControl(new mapboxgl.NavigationControl(), "bottom-right");
+    map.addControl(
+      new mapboxgl.GeolocateControl({
+        positionOptions: {
+          enableHighAccuracy: true,
+        },
+        trackUserLocation: true,
+        showUserHeading: true,
+      }),
+      "bottom-right"
+    );
+    map.addControl(draw);
+
+    // Handle draw.create
+    map.on("draw.create", (e: { features: GeoJSON.Feature[] }) => {
+      const feature = e.features[0];
+      if (!feature || feature.geometry.type !== "Polygon") return;
+
+      const coordinates = feature.geometry.coordinates[0] as number[][];
+      const currentType = drawingTypeRef.current;
+      const currentParentId = selectedParentIdRef.current;
+      const currentPolygons = polygonsRef.current;
+
+      // Check for duplicate
+      if (currentPolygons.some((p) => p.id === feature.id)) {
+        return;
+      }
+
+      // Validate polygon
+      const validation = validatePolygon(
+        coordinates,
+        currentType,
+        currentParentId,
+        currentPolygons
+      );
+
+      if (!validation.valid) {
+        setValidationError(validation.error || "Invalid polygon");
+        draw.delete(feature.id as string);
+        setIsDrawing(false);
+        return;
+      }
+
+      // Calculate measurements
+      const measurements = calculateMeasurements(coordinates);
+      const name = generatePolygonName(currentType, currentPolygons, currentParentId);
+
+      // Set polygon type property for styling
+      draw.setFeatureProperty(feature.id as string, "polygonType", currentType);
+
+      const newPolygon: PolygonData = {
+        id: feature.id as string,
+        type: currentType,
+        name,
+        parentId: currentParentId,
+        ...measurements,
+        coordinates,
+      };
+
+      setPolygons((prev) => [...prev, newPolygon]);
+      setIsDrawing(false);
+      setSelectedPolygonId(feature.id as string);
+    });
+
+    // Handle draw.update
+    map.on("draw.update", (e: { features: GeoJSON.Feature[] }) => {
+      const feature = e.features[0];
+      if (!feature || feature.geometry.type !== "Polygon") return;
+
+      const coordinates = feature.geometry.coordinates[0] as number[][];
+      const currentPolygons = polygonsRef.current;
+      const polygon = currentPolygons.find((p) => p.id === feature.id);
+
+      if (!polygon) return;
+
+      // Validate updated polygon
+      const validation = validatePolygon(
+        coordinates,
+        polygon.type,
+        polygon.parentId,
+        currentPolygons,
+        polygon.id
+      );
+
+      if (!validation.valid) {
+        setValidationError(validation.error || "Invalid polygon");
+        // Revert to original coordinates
+        const originalFeature = draw.get(polygon.id);
+        if (originalFeature) {
+          originalFeature.geometry = {
+            type: "Polygon",
+            coordinates: [polygon.coordinates],
+          };
+          draw.add(originalFeature);
+        }
+        return;
+      }
+
+      // Update measurements
+      const measurements = calculateMeasurements(coordinates);
+      setPolygons((prev) =>
+        prev.map((p) =>
+          p.id === feature.id ? { ...p, ...measurements, coordinates } : p
+        )
+      );
+    });
+
+    // Handle selection change
+    map.on("draw.selectionchange", (e: { features: GeoJSON.Feature[] }) => {
+      if (e.features.length > 0) {
+        setSelectedPolygonId(e.features[0].id as string);
+      } else {
+        setSelectedPolygonId(null);
+        setIsDirectSelectMode(false);
+      }
+    });
+
+    // Handle mode change
+    map.on("draw.modechange", (e: { mode: string }) => {
+      if (e.mode === "simple_select") {
+        setIsDrawing(false);
+        setIsDirectSelectMode(false);
+      } else if (e.mode === "direct_select") {
+        setIsDirectSelectMode(true);
+      }
+    });
+
+    map.on("load", () => {
+      mapRef.current = map;
+      drawRef.current = draw;
+      onMapReady(map, draw);
+    });
+
+    return () => {
+      map.remove();
+    };
+  }, []);
+
+  return (
+    <div ref={mapContainerRef} className="map-container" />
+  );
+}
+
+function getDrawStyles() {
+  return [
+    // Area styles (blue)
+    {
+      id: "gl-draw-polygon-fill-area",
+      type: "fill",
+      filter: ["all", ["==", "$type", "Polygon"], ["==", "user_polygonType", "area"]],
+      paint: {
+        "fill-color": "#3b82f6",
+        "fill-opacity": 0.3,
+      },
+    },
+    {
+      id: "gl-draw-polygon-stroke-area",
+      type: "line",
+      filter: ["all", ["==", "$type", "Polygon"], ["==", "user_polygonType", "area"]],
+      paint: {
+        "line-color": "#3b82f6",
+        "line-width": 2,
+      },
+    },
+    // MZ styles (green)
+    {
+      id: "gl-draw-polygon-fill-mz",
+      type: "fill",
+      filter: ["all", ["==", "$type", "Polygon"], ["==", "user_polygonType", "mz"]],
+      paint: {
+        "fill-color": "#22c55e",
+        "fill-opacity": 0.3,
+      },
+    },
+    {
+      id: "gl-draw-polygon-stroke-mz",
+      type: "line",
+      filter: ["all", ["==", "$type", "Polygon"], ["==", "user_polygonType", "mz"]],
+      paint: {
+        "line-color": "#22c55e",
+        "line-width": 2,
+      },
+    },
+    // SP styles (amber)
+    {
+      id: "gl-draw-polygon-fill-sp",
+      type: "fill",
+      filter: ["all", ["==", "$type", "Polygon"], ["==", "user_polygonType", "sp"]],
+      paint: {
+        "fill-color": "#f59e0b",
+        "fill-opacity": 0.3,
+      },
+    },
+    {
+      id: "gl-draw-polygon-stroke-sp",
+      type: "line",
+      filter: ["all", ["==", "$type", "Polygon"], ["==", "user_polygonType", "sp"]],
+      paint: {
+        "line-color": "#f59e0b",
+        "line-width": 2,
+      },
+    },
+    // Default styles
+    {
+      id: "gl-draw-polygon-fill-default",
+      type: "fill",
+      filter: ["all", ["==", "$type", "Polygon"], ["!has", "user_polygonType"]],
+      paint: {
+        "fill-color": "#3b82f6",
+        "fill-opacity": 0.3,
+      },
+    },
+    {
+      id: "gl-draw-polygon-stroke-default",
+      type: "line",
+      filter: ["all", ["==", "$type", "Polygon"], ["!has", "user_polygonType"]],
+      paint: {
+        "line-color": "#3b82f6",
+        "line-width": 2,
+      },
+    },
+    // Vertex points
+    {
+      id: "gl-draw-point",
+      type: "circle",
+      filter: ["all", ["==", "$type", "Point"], ["==", "meta", "vertex"]],
+      paint: {
+        "circle-radius": 6,
+        "circle-color": "#fff",
+        "circle-stroke-color": "#3b82f6",
+        "circle-stroke-width": 2,
+      },
+    },
+    // Midpoints
+    {
+      id: "gl-draw-point-mid",
+      type: "circle",
+      filter: ["all", ["==", "$type", "Point"], ["==", "meta", "midpoint"]],
+      paint: {
+        "circle-radius": 4,
+        "circle-color": "#3b82f6",
+        "circle-stroke-color": "#fff",
+        "circle-stroke-width": 1,
+      },
+    },
+    // Lines
+    {
+      id: "gl-draw-line",
+      type: "line",
+      filter: ["all", ["==", "$type", "LineString"]],
+      paint: {
+        "line-color": "#3b82f6",
+        "line-width": 2,
+      },
+    },
+  ];
+}

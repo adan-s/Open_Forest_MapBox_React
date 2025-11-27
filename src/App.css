@@ -1,0 +1,442 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+}
+
+.app {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+}
+
+/* Map Container */
+.map-container {
+  flex: 1;
+  height: 100%;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 320px;
+  height: 100%;
+  background: #1a1a2e;
+  color: #eee;
+  padding: 16px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sidebar h2 {
+  font-size: 1.25rem;
+  margin-bottom: 8px;
+  color: #fff;
+}
+
+.sidebar h3 {
+  font-size: 1rem;
+  margin-bottom: 8px;
+  color: #ccc;
+}
+
+.sidebar h4 {
+  font-size: 0.875rem;
+  margin-bottom: 8px;
+  color: #aaa;
+}
+
+/* Error Banner */
+.error-banner {
+  background: #dc2626;
+  color: white;
+  padding: 12px;
+  border-radius: 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.error-banner button {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.25rem;
+  cursor: pointer;
+}
+
+/* Drawing Controls */
+.drawing-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.control-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.control-section label {
+  font-size: 0.875rem;
+  color: #aaa;
+}
+
+.draw-btn {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: opacity 0.2s;
+}
+
+.draw-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.draw-btn-area {
+  background: #3b82f6;
+  color: white;
+}
+
+.draw-btn-mz {
+  background: #22c55e;
+  color: white;
+}
+
+.draw-btn-sp {
+  background: #f59e0b;
+  color: white;
+}
+
+.parent-select {
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #333;
+  background: #16213e;
+  color: #eee;
+  font-size: 0.875rem;
+}
+
+.parent-select:disabled {
+  opacity: 0.5;
+}
+
+.drawing-hint {
+  font-size: 0.75rem;
+  color: #888;
+  font-style: italic;
+}
+
+/* Divider */
+.divider {
+  border: none;
+  border-top: 1px solid #333;
+  margin: 8px 0;
+}
+
+/* Polygon List */
+.polygon-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.empty-message {
+  font-size: 0.875rem;
+  color: #666;
+  font-style: italic;
+}
+
+.tree-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.polygon-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #16213e;
+  border: 1px solid #333;
+  border-radius: 6px;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  color: #eee;
+  transition: background 0.2s;
+}
+
+.polygon-item:hover {
+  background: #1f2937;
+}
+
+.polygon-item.selected {
+  border-color: #3b82f6;
+  background: #1e3a5f;
+}
+
+.type-indicator {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.polygon-name {
+  flex: 1;
+  font-size: 0.875rem;
+}
+
+.polygon-type {
+  font-size: 0.75rem;
+  color: #888;
+}
+
+/* Polygon Details */
+.polygon-details {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.polygon-type-label {
+  font-size: 0.875rem;
+  color: #888;
+}
+
+.measurements {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #16213e;
+  padding: 12px;
+  border-radius: 6px;
+}
+
+.measurement-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.875rem;
+}
+
+.measurement-item .label {
+  color: #888;
+}
+
+.measurement-item .value {
+  color: #eee;
+  font-family: monospace;
+}
+
+/* Action Buttons */
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.action-btn {
+  flex: 1;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: opacity 0.2s;
+}
+
+.edit-btn {
+  background: #6366f1;
+  color: white;
+}
+
+.delete-btn {
+  background: #dc2626;
+  color: white;
+}
+
+.action-btn:hover {
+  opacity: 0.9;
+}
+
+/* Vertex Controls */
+.vertex-controls {
+  background: #16213e;
+  padding: 12px;
+  border-radius: 6px;
+}
+
+.vertex-controls .hint {
+  font-size: 0.75rem;
+  color: #888;
+  margin-bottom: 8px;
+}
+
+.vertex-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.vertex-btn {
+  padding: 4px 8px;
+  background: #374151;
+  border: 1px solid #4b5563;
+  border-radius: 4px;
+  color: #eee;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.vertex-btn:hover:not(:disabled) {
+  background: #dc2626;
+  border-color: #dc2626;
+}
+
+.vertex-btn:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.warning {
+  font-size: 0.75rem;
+  color: #f59e0b;
+  margin-top: 8px;
+}
+
+/* Geocoder Styles */
+.mapboxgl-ctrl-geocoder {
+  min-width: 280px !important;
+}
+
+/* Delete Confirmation Dialog */
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.dialog-content {
+  background: #1a1a2e;
+  border-radius: 12px;
+  padding: 24px;
+  max-width: 400px;
+  width: 90%;
+  color: #eee;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.dialog-content h3 {
+  margin-bottom: 16px;
+  font-size: 1.25rem;
+  color: #fff;
+}
+
+.dialog-content p {
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+
+.delete-warning {
+  background: #7f1d1d;
+  border: 1px solid #dc2626;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 16px;
+}
+
+.delete-warning p {
+  margin-bottom: 8px;
+  color: #fca5a5;
+  font-size: 0.875rem;
+}
+
+.children-list {
+  list-style: none;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.children-list li {
+  padding: 4px 8px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  margin-bottom: 4px;
+  font-size: 0.875rem;
+  font-family: monospace;
+}
+
+.dialog-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.btn-cancel {
+  flex: 1;
+  padding: 10px 16px;
+  background: #374151;
+  border: none;
+  border-radius: 6px;
+  color: #eee;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-cancel:hover {
+  background: #4b5563;
+}
+
+.btn-delete {
+  flex: 1;
+  padding: 10px 16px;
+  background: #dc2626;
+  border: none;
+  border-radius: 6px;
+  color: white;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-delete:hover {
+  background: #b91c1c;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .app {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    height: auto;
+    max-height: 40vh;
+  }
+
+  .map-container {
+    min-height: 60vh;
+  }
+}
