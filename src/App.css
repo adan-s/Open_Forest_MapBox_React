@@ -114,8 +114,8 @@ html, body, #root {
 }
 
 .draw-btn-sp {
-  background: #f59e0b;
-  color: white;
+  background: #facc15;
+  color: #1a1a2e;
 }
 
 .parent-select {
@@ -313,7 +313,7 @@ html, body, #root {
 
 .warning {
   font-size: 0.75rem;
-  color: #f59e0b;
+  color: #facc15;
   margin-top: 8px;
 }
 

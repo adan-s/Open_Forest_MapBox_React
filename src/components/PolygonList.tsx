@@ -81,7 +81,7 @@ function PolygonTreeItem({
   const typeColors: Record<PolygonType, string> = {
     area: "#3b82f6",
     mz: "#22c55e",
-    sp: "#f59e0b",
+    sp: "#facc15",
   };
 
   return (

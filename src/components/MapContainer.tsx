@@ -64,6 +64,8 @@ export function MapContainer({
         polygon: false,
         trash: false,
       },
+
+      userProperties: true,
       styles: getDrawStyles(),
     });
 
@@ -125,8 +127,23 @@ export function MapContainer({
       const measurements = calculateMeasurements(coordinates);
       const name = generatePolygonName(currentType, currentPolygons, currentParentId);
 
-      // Set polygon type property for styling
-      draw.setFeatureProperty(feature.id as string, "polygonType", currentType);
+      // Set polygonType property for color styling
+      const featureId = feature.id as string;
+      const currentFeature = draw.get(featureId);
+      if (currentFeature) {
+        const featureWithProperty: GeoJSON.Feature<GeoJSON.Polygon> = {
+          ...currentFeature,
+          id: featureId,
+          geometry: currentFeature.geometry as GeoJSON.Polygon,
+          properties: {
+            ...(currentFeature.properties || {}),
+            polygonType: currentType,
+          },
+        };
+        draw.delete(featureId);
+        const [addedFeatureId] = draw.add(featureWithProperty);
+        feature.id = addedFeatureId;
+      }
 
       const newPolygon: PolygonData = {
         id: feature.id as string,
@@ -183,6 +200,17 @@ export function MapContainer({
           p.id === feature.id ? { ...p, ...measurements, coordinates } : p
         )
       );
+
+      // Preserve polygonType property for styling
+      const featureToUpdate = draw.get(polygon.id);
+      if (featureToUpdate) {
+        featureToUpdate.properties = {
+          ...featureToUpdate.properties,
+          polygonType: polygon.type,
+        };
+        draw.delete(polygon.id);
+        draw.add(featureToUpdate);
+      }
     });
 
     // Handle selection change
@@ -216,87 +244,77 @@ export function MapContainer({
     };
   }, []);
 
+  // Sync polygonType property for existing features
+  useEffect(() => {
+    if (!drawRef.current || !mapRef.current) return;
+
+    const draw = drawRef.current;
+    polygons.forEach((polygon) => {
+      const feature = draw.get(polygon.id);
+      if (feature && feature.properties?.polygonType !== polygon.type) {
+        feature.properties = {
+          ...feature.properties,
+          polygonType: polygon.type,
+        };
+        draw.delete(polygon.id);
+        draw.add(feature);
+      }
+    });
+  }, [polygons]);
+
   return (
     <div ref={mapContainerRef} className="map-container" />
   );
 }
 
 function getDrawStyles() {
+  const colorExpr = [
+    "case",
+    ["==", ["get", "user_polygonType"], "area"], "#3b82f6",
+    ["==", ["get", "user_polygonType"], "mz"], "#22c55e",
+    ["==", ["get", "user_polygonType"], "sp"], "#facc15",
+    "#3b82f6"
+  ];
+
   return [
-    // Area styles (blue)
+    // Polygon fill - inactive
     {
-      id: "gl-draw-polygon-fill-area",
+      id: "gl-draw-polygon-fill-inactive",
       type: "fill",
-      filter: ["all", ["==", "$type", "Polygon"], ["==", "user_polygonType", "area"]],
+      filter: ["all", ["==", "$type", "Polygon"], ["==", "active", "false"]],
       paint: {
-        "fill-color": "#3b82f6",
+        "fill-color": colorExpr,
         "fill-opacity": 0.3,
       },
     },
+    // Polygon stroke - inactive
     {
-      id: "gl-draw-polygon-stroke-area",
+      id: "gl-draw-polygon-stroke-inactive",
       type: "line",
-      filter: ["all", ["==", "$type", "Polygon"], ["==", "user_polygonType", "area"]],
+      filter: ["all", ["==", "$type", "Polygon"], ["==", "active", "false"]],
       paint: {
-        "line-color": "#3b82f6",
+        "line-color": colorExpr,
         "line-width": 2,
       },
     },
-    // MZ styles (green)
+    // Polygon fill - active
     {
-      id: "gl-draw-polygon-fill-mz",
+      id: "gl-draw-polygon-fill-active",
       type: "fill",
-      filter: ["all", ["==", "$type", "Polygon"], ["==", "user_polygonType", "mz"]],
+      filter: ["all", ["==", "$type", "Polygon"], ["==", "active", "true"]],
       paint: {
-        "fill-color": "#22c55e",
-        "fill-opacity": 0.3,
+        "fill-color": colorExpr,
+        "fill-opacity": 0.4,
       },
     },
+    // Polygon stroke - active
     {
-      id: "gl-draw-polygon-stroke-mz",
+      id: "gl-draw-polygon-stroke-active",
       type: "line",
-      filter: ["all", ["==", "$type", "Polygon"], ["==", "user_polygonType", "mz"]],
+      filter: ["all", ["==", "$type", "Polygon"], ["==", "active", "true"]],
       paint: {
-        "line-color": "#22c55e",
-        "line-width": 2,
-      },
-    },
-    // SP styles (amber)
-    {
-      id: "gl-draw-polygon-fill-sp",
-      type: "fill",
-      filter: ["all", ["==", "$type", "Polygon"], ["==", "user_polygonType", "sp"]],
-      paint: {
-        "fill-color": "#f59e0b",
-        "fill-opacity": 0.3,
-      },
-    },
-    {
-      id: "gl-draw-polygon-stroke-sp",
-      type: "line",
-      filter: ["all", ["==", "$type", "Polygon"], ["==", "user_polygonType", "sp"]],
-      paint: {
-        "line-color": "#f59e0b",
-        "line-width": 2,
-      },
-    },
-    // Default styles
-    {
-      id: "gl-draw-polygon-fill-default",
-      type: "fill",
-      filter: ["all", ["==", "$type", "Polygon"], ["!has", "user_polygonType"]],
-      paint: {
-        "fill-color": "#3b82f6",
-        "fill-opacity": 0.3,
-      },
-    },
-    {
-      id: "gl-draw-polygon-stroke-default",
-      type: "line",
-      filter: ["all", ["==", "$type", "Polygon"], ["!has", "user_polygonType"]],
-      paint: {
-        "line-color": "#3b82f6",
-        "line-width": 2,
+        "line-color": colorExpr,
+        "line-width": 3,
       },
     },
     // Vertex points
@@ -323,11 +341,21 @@ function getDrawStyles() {
         "circle-stroke-width": 1,
       },
     },
-    // Lines
+    // Lines (while drawing)
     {
-      id: "gl-draw-line",
+      id: "gl-draw-line-active",
       type: "line",
-      filter: ["all", ["==", "$type", "LineString"]],
+      filter: ["all", ["==", "$type", "LineString"], ["==", "active", "true"]],
+      paint: {
+        "line-color": "#3b82f6",
+        "line-width": 2,
+        "line-dasharray": [2, 2],
+      },
+    },
+    {
+      id: "gl-draw-line-inactive",
+      type: "line",
+      filter: ["all", ["==", "$type", "LineString"], ["==", "active", "false"]],
       paint: {
         "line-color": "#3b82f6",
         "line-width": 2,
